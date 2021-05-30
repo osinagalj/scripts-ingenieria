@@ -12,7 +12,8 @@ using ManejoEventos;
 using System.Threading;
 
 /*Controllador visual del agile_bot. Se encarga de subscribirse a los eventos generados por el agileBot del mundo sintetico*/
-/*@autor: Lautaro*/
+//@autor: Lautaro, Sofia
+
 public class AgileBot : MonoBehaviour,ManejoEventos.Accion, ManejoEventos.AccionUnity
 {   
     Actor teamMeamber = new Actor();
@@ -100,7 +101,7 @@ public class AgileBot : MonoBehaviour,ManejoEventos.Accion, ManejoEventos.Accion
 
     /*Ejecuta la accion correspondiente al evento "Finalizo Tarea". En caso de estar asignado a dicha tarea, ejecuta el pedido de animacion para
     mover la tarea en el kanban 
-      @autor: Lautaro
+
       @params: tarea es la tarea que finalizo*/
     void ResponseFinTarea(Tarea tarea){
 
