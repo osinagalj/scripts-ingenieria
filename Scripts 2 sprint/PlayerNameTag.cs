@@ -4,6 +4,11 @@ using UnityEngine;
 using Photon.Pun;
 using TMPro;
 
+    ///<sumary>
+    ///This class is in charge of setting the name of the TeamBot avatar, 
+    //identifying them correctly through the DB
+    ///</sumary>
+    ///@Author: Lautaro
 public class PlayerNameTag : MonoBehaviourPun
 {
     public Transform nameUserMapTransform;
