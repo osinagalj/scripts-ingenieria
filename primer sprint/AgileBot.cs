@@ -15,7 +15,7 @@ public class AgileBot
    
 
 /*estructura del AgileBot, guardado de datos del Team Member y suscripcion a eventos
- @autor: Sofia
+ @autor: Lautaro
  @params: string nickName es el nombre del Actor asociado al AgileBot*/
     public AgileBot(string nickName){
 
