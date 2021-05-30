@@ -6,66 +6,74 @@ using CymaticLabs.Unity3D.Amqp;
 using System;
 using Newtonsoft.Json;
 
-public class AgileBot
-{   // Clase AgileBot Team Mignon
+using ManejoEventos;
 
+
+using System.Threading;
+
+/*Controllador visual del agile_bot. Se encarga de subscribirse a los eventos generados por el agileBot del mundo sintetico*/
+/*@autor: Lautaro*/
+public class AgileBot : MonoBehaviour,ManejoEventos.Accion, ManejoEventos.AccionUnity
+{   
     Actor teamMeamber = new Actor();
     string id="";
     string nombre="";
    
 
-/*estructura del AgileBot, guardado de datos del Team Member y suscripcion a eventos
- @autor: Lautaro
- @params: string nickName es el nombre del Actor asociado al AgileBot*/
-    public AgileBot(string nickName){
+
+    public AgileBot(string nickName) {
+
+         Debug.Log("----------------------------- AGILE_BOT start -------------");
 
         nombre=nickName;
         teamMeamber.setNombre(nickName);
         id=nombre+"_bot";
 
-        //Debug.Log("----------------------------- AGILE_BOT -------------");
-        //Suscripcion a los eventos necesarios
-        var subscriptionActor = new UnityAmqpExchangeSubscription("topic_logs", AmqpExchangeTypes.Topic, "CambioEstadoUserStory",null, HandleExchangeMessageReceived);
-            AmqpClient.Subscribe(subscriptionActor);
+        ManejadorEventos.Conectar("localhost");
 
-        var subscriptionArtefacto = new UnityAmqpExchangeSubscription("topic_logs", AmqpExchangeTypes.Topic, "Artefacto.Cambio",null, HandleExchangeMessageReceived);
-            AmqpClient.Subscribe(subscriptionArtefacto);
-
-        var subscriptionReunion = new UnityAmqpExchangeSubscription("topic_logs", AmqpExchangeTypes.Topic, "FasePorIniciar",null, HandleExchangeMessageReceived);
-            AmqpClient.Subscribe(subscriptionReunion);
-
+        ManejadorEventos.Subscribirse("example", this, this);
+        ManejadorEventos.Subscribirse("CambioEstadoUserStory", this, this);
+        ManejadorEventos.Subscribirse("ArtefactoCambio", this, this);
+        ManejadorEventos.Subscribirse("FasePorIniciar", this, this);
+        
+        Debug.Log("----------------------------- AgileBot publicando evento tarea -------------");
         //Codigo para serializar un objeto
         Tarea tarea = new Tarea();
         tarea.setNombre("tarea1");
         tarea.addActor(teamMeamber);
         string jsonData = JsonConvert.SerializeObject(tarea); 
+        ManejadorEventos.Publicar("CambioEstadoUserStory", jsonData);
+
         
         //Codigo para publicar un evento
-        var exchangeName = "topic_logs";
+        var exchangeName = "log_eventos";
         var routingKey = "CambioEstadoUserStory";
         var message = jsonData;
         AmqpClient.Publish(exchangeName, routingKey, message);
+        
 
     }
 
-
-    /*Handler de eventos, se activa al publicarse un evento al cual esta suscripto el AgileBot y ejecuta la accion correspondiente al mismo.
-    Deserializa el mensaje recibido 
-     @autor: Lautaro*/
-    void HandleExchangeMessageReceived(AmqpExchangeSubscription subscription, IAmqpReceivedMessage message)
+    public void Accion(AmqpExchangeReceivedMessage msgRecibido)
     {   
-        
-        //Debug.Log("---------------------AGILE_BOT escucho una SUSCRIPCION----------------------");
-        var topic= subscription;
-        var receivedJson = System.Text.Encoding.UTF8.GetString(message.Body);
-        Tarea newtarea = JsonConvert.DeserializeObject<Tarea>(receivedJson);  
-        //Debug.Log("-----------Mensaje de message = " + receivedJson);
+        Debug.Log("---------------------AGILE_BOT escucho una SUSCRIPCION----------------------");
+
+        //Thread.Sleep(5000);
+        Debug.Log("----------------------------- Moviendo agil bot -------------");
+        var bot = GameObject.FindGameObjectWithTag("Player"); 
+        bot.GetComponent<movementAgent>().runAgent("kanban");
+
+        //var topic= subscription;
+        //var receivedJson = System.Text.Encoding.UTF8.GetString(message.Body);
+        //Tarea newtarea = JsonConvert.DeserializeObject<Tarea>(receivedJson);  
+        Debug.Log("-----------Mensaje de la accion = " + 
+                System.Text.Encoding.UTF8.GetString(msgRecibido.Message.Body));
 
         switch (subscription.RoutingKey){
              case "CambioEstadoUserStory" :
                    // Debug.Log("-- CambioEstadoUserStory RoutingKey --");
                     //ResponseFinTarea(msg);
-                    ResponseFinTarea(newtarea);
+                    //ResponseFinTarea(newtarea);
                      break;
              case "FasePorIniciar" :
                     //Debug.Log("-- FasePorIniciar RoutingKey --");
@@ -74,9 +82,20 @@ public class AgileBot
               default:
                  Debug.Log("-- Default RoutingKey --");
                 break;
-            
-         }
+        }        
 
+    }
+
+    public void AccionUnity(AmqpExchangeSubscription subscripcion, IAmqpReceivedMessage mensaje)
+    {
+       //Interfaz implementada para el correcto funcionamieno de ManejoEventos
+    }
+
+ 
+    /*Handler de eventos, se activa al publicarse un evento al cual esta suscripto el AgileBot y ejecuta la accion correspondiente al mismo.
+    Deserializa el mensaje recibido */
+    void HandleExchangeMessageReceived(AmqpExchangeSubscription subscription, IAmqpReceivedMessage message)
+    {           
     }
 
     /*Ejecuta la accion correspondiente al evento "Finalizo Tarea". En caso de estar asignado a dicha tarea, ejecuta el pedido de animacion para
@@ -84,6 +103,10 @@ public class AgileBot
       @autor: Lautaro
       @params: tarea es la tarea que finalizo*/
     void ResponseFinTarea(Tarea tarea){
+
+        //var bot = GameObject.Find("Opcion 4(Clone)");
+
+        
         if((tarea.contieneActor(teamMeamber.getIdentificador()))){
             //enviar evento para que el avatar cambie la tarea a done
             //Debug.Log("-- Tarea asociada mi bot --");
@@ -104,3 +127,8 @@ public class AgileBot
     void ResponseReunionComienzaPronto(string json){}
 
 }
+
+
+        //Suscripcion a los eventos necesarios
+       // var subscriptionActor = new UnityAmqpExchangeSubscription("topic_logs", AmqpExchangeTypes.Topic, "CambioEstadoUserStory",null, HandleExchangeMessageReceived);
+       //     AmqpClient.Subscribe(subscriptionActor);
